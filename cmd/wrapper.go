@@ -33,7 +33,6 @@ import (
 
 	linereader "github.com/mitchellh/go-linereader"
 	"github.com/pantheon-systems/go-certauth/certutils"
-	"github.com/pantheon-systems/redshirt-cli-wrapper/pkg/cert"
 	"github.com/pantheon-systems/riker/pkg/botpb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -184,23 +183,28 @@ func initConfig() {
 }
 
 func wrapCmd(cmd *cobra.Command, args []string) error {
-	// cert, err := certutils.LoadKeyCertFiles(certFile, certFile)
-	// if err != nil {
-	// 	log.Fatalf("Could not load TLS cert '%s': %s", certFile, err.Error())
-	// }
-	cm, err := cert.NewCertificateManager(certFile, certFile)
+	cert, err := certutils.LoadKeyCertFiles(certFile, certFile)
 	if err != nil {
 		log.Fatalf("Could not load TLS cert '%s': %s", certFile, err.Error())
 	}
+	// TODO: re-implement cert reloading after we merge our final design into go-certauth/certutils package
+	// cm, err := certutils.NewCertReloader(certFile, certFile)
+	// if err != nil {
+	// 	log.Fatalf("Could not load TLS cert '%s': %s", certFile, err.Error())
+	// }
+
 	caPool, err := certutils.LoadCACertFile(caFile)
 	if err != nil {
 		log.Fatalf("Could not load CA cert '%s': %s", caFile, err.Error())
 	}
-	//tlsConfig := certutils.NewTLSConfig(certutils.TLSConfigModern)
-	tlsConfig := &tls.Config{
-		GetClientCertificate: cm.GetClientCertificate,
-	}
+	tlsConfig := certutils.NewTLSConfig(certutils.TLSConfigModern)
 	tlsConfig.RootCAs = caPool
+	tlsConfig.Certificates = []tls.Certificate{cert}
+
+	// TODO: re-implement cert reloading after we merge our final design into go-certauth/certutils package
+	// tlsConfig := &tls.Config{
+	// 	GetClientCertificate: cm.GetClientCertificate,
+	// }
 
 	// connect to riker
 	log.Println("Trying to connect to riker at ", addr)
