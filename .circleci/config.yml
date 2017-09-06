@@ -1,0 +1,21 @@
+---
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.9
+
+    working_directory: /go/src/github.com/pantheon-systems/redshirt-cli-wrapper
+
+    steps:
+      - checkout
+      # NOTE: run 'deps' instead of 'deps-circle'. We don't need the go install script when using circleci 2.0
+      - run: make deps
+      - run: make test-circle
+      - run: make build-circle
+      - deploy:
+          name: build and release
+          command: |
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              echo "TODO: implement release commands when we figure out the release strategy - github binary release or docker image?"
+            fi
