@@ -14,8 +14,11 @@ jobs:
       - run: make test-circle
       - run: make build-circle
       - deploy:
-          name: build and release
+          name: github_release
+          tag: /(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)/
           command: |
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              echo "TODO: implement release commands when we figure out the release strategy - github binary release or docker image?"
+              mv redshirt-cli-wrapper "$CIRCLE_ARTIFACTS"/
+              go get github.com/tcnksm/ghr
+              ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace `git describe --tags` "$CIRCLE_ARTIFACTS"/
             fi
