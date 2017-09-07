@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/pantheon-systems/riker/redshirts/cli-wrapper/cmd"
+import "github.com/pantheon-systems/redshirt-cli-wrapper/cmd"
 
 func main() {
 	cmd.Execute()

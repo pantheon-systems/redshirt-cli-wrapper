@@ -1,4 +1,4 @@
-// Copyright © 2017 Joe Miller <joeym@joeym.net>
+// Copyright © 2017 Pantheon Systems, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,23 +54,25 @@ var client botpb.RikerClient
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "cli-wrapper",
+	Use:   "redshirt-cli-wrapper [command]",
 	Short: "An wrapper for converting any app into a Redshirt bot",
 	Long: `A wrapper for converting any app into a Redshirt bot using a simple
 protocol based on STDIN, STDOUT, STDERR.
 
 Example:
 
-	cli-wrapper \
+	redshirt-cli-wrapper \
 		-addr riker:6000 \
 		-cert echo.pem \
 		-namespace "echo" \
 		-description="echo server" \
 		--groups "infra" \
 		-usage "echo <msg>: replies with <msg>" \
-		-command "/bin/echo"
+		/bin/echo-server
 `,
 
+	// we expect at least one positional arg - the command to execute (with optional args)
+	Args:    cobra.MinimumNArgs(1),
 	PreRunE: validateArgs,
 	RunE:    wrapCmd,
 }
@@ -142,17 +144,9 @@ func init() {
 		[]string{},
 		"(required) List of chat usernames authorized to access this redshirt",
 	)
-
-	RootCmd.PersistentFlags().StringVarP(
-		&command,
-		"command",
-		"e",
-		"",
-		"(required) Path to command to execute on matching chat messages")
 }
 
 func validateArgs(cmd *cobra.Command, args []string) error {
-	log.Println("addr:", addr)
 	if addr == "" {
 		return errors.New("missing --addr")
 	}
@@ -167,9 +161,6 @@ func validateArgs(cmd *cobra.Command, args []string) error {
 	}
 	if len(users) == 0 && len(groups) == 0 {
 		return errors.New("must specify either --users or --groups")
-	}
-	if command == "" {
-		return errors.New("missing --command")
 	}
 
 	return nil
@@ -202,9 +193,6 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 	tlsConfig.Certificates = []tls.Certificate{cert}
 
 	// TODO: re-implement cert reloading after we merge our final design into go-certauth/certutils package
-	// tlsConfig := &tls.Config{
-	// 	GetClientCertificate: cm.GetClientCertificate,
-	// }
 
 	// connect to riker
 	log.Println("Trying to connect to riker at ", addr)
@@ -214,7 +202,7 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 			Timeout: 5 * time.Second,
 		}),
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithBackoffMaxDelay(1*time.Second),
+		grpc.WithBackoffMaxDelay(10*time.Second),
 		grpc.WithBlock(), // Blocking on connect is ok here
 	)
 	if err != nil {
@@ -276,8 +264,8 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		c := exec.Cmd{
-			Path: command,
-			Args: args,
+			Path: args[0],
+			Args: args[1:],
 		}
 
 		go runCmd(reply, c)
