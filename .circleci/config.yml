@@ -4,9 +4,7 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.9
-
     working_directory: /go/src/github.com/pantheon-systems/redshirt-cli-wrapper
-
     steps:
       - checkout
       # NOTE: run 'deps' instead of 'deps-circle'. We don't need the go install script when using circleci 2.0
@@ -14,11 +12,44 @@ jobs:
       - run: make test-circle
       - run: make build-circle
       - deploy:
+          # NOTE: GITHUB_TOKEN env var must be set
           name: github_release
-          tag: /(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)/
+          # tag: /(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)/
           command: |
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              mv redshirt-cli-wrapper "$CIRCLE_ARTIFACTS"/
               go get github.com/tcnksm/ghr
-              ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace `git describe --tags` "$CIRCLE_ARTIFACTS"/
+              ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace \
+                "$CIRCLE_BUILD_NUM" \
+                ./redshirt-cli-wrapper
             fi
+
+  # github_release:
+  #   docker:
+  #     - image: circleci/golang:1.9
+  #   working_directory: /go/src/github.com/pantheon-systems/redshirt-cli-wrapper
+  #   steps:
+  #     - deploy:
+  #         # NOTE: GITHUB_TOKEN env var must be set
+  #         name: github_release
+  #         # tag: /(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)/
+  #         command: |
+  #           if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+  #             go get github.com/tcnksm/ghr
+  #             ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace \
+  #               "$CIRCLE_BUILD_NUM" \
+  #               ./redshirt-cli-wrapper
+  #           fi
+
+# workflows:
+# version: 2
+
+# build_and_release:
+#   jobs:
+#     - flow
+#     - downstream:
+#         requires:
+#           - flow
+#         filters:
+#           branches:
+#             only: master
+
