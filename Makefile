@@ -1,9 +1,21 @@
 APP := redshirt-cli-wrapper
 
+# compile release binaries for these archs and os's
+RELEASE_ARCH := 386 amd64
+RELEASE_OS := linux darwin openbsd
+
 include devops/make/common.mk
 include devops/make/common-docker.mk
 include devops/make/common-docs.mk
 include devops/make/common-go.mk
+
+build-release:: ## build binaries for all supported platforms
+	@go get github.com/mitchellh/gox
+	@rm -rf ./dist/
+	@gox \
+		-os="$(RELEASE_OS)" \
+		-arch="$(RELEASE_ARCH)" \
+		-output "./dist/{{.Dir}}_{{.OS}}_{{.Arch}}"
 
 # extend the update-makefiles task to remove files we don't need
 update-makefiles::

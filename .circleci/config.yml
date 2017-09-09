@@ -10,7 +10,7 @@ jobs:
       # NOTE: run 'deps' instead of 'deps-circle'. We don't need the go install script when using circleci 2.0
       - run: make deps
       - run: make test-circle
-      - run: make build-circle
+      - run: make build-release
       - deploy:
           # NOTE: GITHUB_TOKEN env var must be set
           name: github_release
@@ -20,5 +20,5 @@ jobs:
               go get github.com/tcnksm/ghr
               ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace \
                 "$CIRCLE_BUILD_NUM" \
-                ./redshirt-cli-wrapper
+                ./dist
             fi
