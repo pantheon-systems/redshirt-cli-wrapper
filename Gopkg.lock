@@ -52,7 +52,7 @@
 [[projects]]
   branch = "io-2612-initial-release"
   name = "github.com/pantheon-systems/riker"
-  packages = ["pkg/botpb","redshirts/cli-wrapper/cmd","redshirts/cli-wrapper/pkg/cert"]
+  packages = ["pkg/botpb"]
   revision = "c86ba2959c0e1c6bbfd8f5ed4fbdd3c895cc1157"
 
 [[projects]]
@@ -142,6 +142,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3bb2cd8b4dee2bfbf494f9afcc092e540c2432f2ab4003bddac9cbd4546bed35"
+  inputs-digest = "609dae00ab1b269a0ce6435013b9facda1080cdb90193c3628696ca5075b1c4e"
   solver-name = "gps-cdcl"
   solver-version = 1
