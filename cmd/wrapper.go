@@ -252,9 +252,9 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 		fields := strings.Fields(msg.Payload)
 
 		// buld up the command and the args from the passed in cmd
-		args := fields[1:]
+		cmdArgs := fields[1:]
 		if fields[0] == "<@" {
-			args = fields[2:]
+			cmdArgs = fields[2:]
 		}
 
 		reply := &botpb.Message{
@@ -263,9 +263,11 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 			ThreadTs:  msg.Timestamp,
 		}
 
+		fullArgs := append(args[1:], cmdArgs...)
+
 		c := exec.Cmd{
 			Path: args[0],
-			Args: args[1:],
+			Args: fullArgs,
 		}
 
 		go runCmd(reply, c)
@@ -288,10 +290,9 @@ func runCmd(reply *botpb.Message, c exec.Cmd) {
 		return
 	}
 
-	// buffer & flush algorithm
+	// buffer & flush algorithm:
 	// buffer up the line-oriented output from the command as a slice of strings, then
-	// send all lines in the buffer whenever 10 lines of output is accumulated,
-	// or 2 seconds of time passes
+	// send all lines in the buffer whenever 10 lines of output is accumulated, or 2 seconds of time passes.
 	// TODO: should we make this configurable? eg: time-flush=2s, lines-flush=10
 	lines := []string{}
 	lr := linereader.New(combined)
