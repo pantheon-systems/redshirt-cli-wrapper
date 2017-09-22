@@ -1,4 +1,4 @@
-cli-wrapper
+redshirt-cli-wrapper
 vendor/*
 .envrc
 *.crt

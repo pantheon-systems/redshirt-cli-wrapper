@@ -1,5 +1,5 @@
 #!/bin/bash
-
+echo you sent "$@"
 echo hello from line 1
 echo sleep 6
 sleep 6

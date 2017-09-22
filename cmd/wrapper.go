@@ -252,9 +252,9 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 		fields := strings.Fields(msg.Payload)
 
 		// buld up the command and the args from the passed in cmd
-		cmdArgs := fields[1:]
+		cmdArgs := fields
 		if fields[0] == "<@" {
-			cmdArgs = fields[2:]
+			cmdArgs = fields[1:]
 		}
 
 		reply := &botpb.Message{
