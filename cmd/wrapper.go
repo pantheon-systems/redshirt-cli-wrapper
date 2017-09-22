@@ -249,21 +249,16 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		log.Printf("Got message from riker: %+v\n", msg)
-		fields := strings.Fields(msg.Payload)
+		cmdArgs := segmentMessage(namespace, msg.Payload)
 
-		// buld up the command and the args from the passed in cmd
-		cmdArgs := fields
-		if fields[0] == "<@" {
-			cmdArgs = fields[1:]
-		}
+		fullArgs := args[1:]
+		fullArgs = append(fullArgs, cmdArgs...)
 
 		reply := &botpb.Message{
 			Channel:   msg.Channel,
 			Timestamp: msg.Timestamp,
 			ThreadTs:  msg.Timestamp,
 		}
-
-		fullArgs := append(args[1:], cmdArgs...)
 
 		c := exec.Cmd{
 			Path: args[0],
@@ -363,4 +358,22 @@ func sendMsg(msg *botpb.Message) {
 		log.Println("Error sending message to riker: ", err)
 	}
 	log.Println("Sent!!! ", resp)
+}
+
+// segmentMessage  will ensure the string is normalized and broken into its words
+func segmentMessage(ns, msg string) []string {
+	fields := strings.Fields(msg)
+
+	// check if the field 0th element is addressed to the bot
+	if strings.HasPrefix(fields[0], "<@") {
+		fields = fields[1:]
+	}
+
+	// if the message has teh namespace(cmd) from chat we strip we don't want to pass that
+	// to the cli we are invoking
+	if fields[0] == ns {
+		fields = fields[1:]
+	}
+
+	return fields
 }
