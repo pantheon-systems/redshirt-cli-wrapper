@@ -251,8 +251,9 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 		log.Printf("Got message from riker: %+v\n", msg)
 		cmdArgs := segmentMessage(namespace, msg.Payload)
 
-		fullArgs := args[1:]
-		fullArgs = append(fullArgs, cmdArgs...)
+		// ensure we take the command to run + cli args and then add any args passed
+		// from chat
+		fullArgs = append(args, cmdArgs...)
 
 		reply := &botpb.Message{
 			Channel:   msg.Channel,
