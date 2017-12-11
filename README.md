@@ -13,6 +13,11 @@ provided by the chat user.
 In Riker terminology this is a 'redshirt', or a "micro bot" that implements some
 specific functionality.
 
+Testing
+-------
+To test with the riker terminal mode you must use the --debug option, then you do not specify a ca cert or
+riker certificate as terminal mode does not support TLS
+
 Usage
 -----
 
