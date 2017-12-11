@@ -40,6 +40,7 @@ import (
 
 var (
 	addr        string
+	debug       bool
 	certFile    string
 	caFile      string
 	namespace   string
@@ -93,6 +94,12 @@ func init() {
 		"a",
 		"riker:6000",
 		"(required) Address of Riker gRPC server")
+
+	RootCmd.PersistentFlags().BoolVar(
+		&debug,
+		"debug",
+		false,
+		"if true turns on debug mode, which does not use TLS")
 
 	RootCmd.PersistentFlags().StringVarP(
 		&certFile,
@@ -150,7 +157,7 @@ func validateArgs(cmd *cobra.Command, args []string) error {
 	if addr == "" {
 		return errors.New("missing --addr")
 	}
-	if certFile == "" {
+	if !debug && certFile == "" {
 		return errors.New("missing --cert")
 	}
 	if description == "" {
@@ -173,38 +180,45 @@ func initConfig() {
 	viper.AutomaticEnv()
 }
 
-func wrapCmd(cmd *cobra.Command, args []string) error {
-	cert, err := certutils.LoadKeyCertFiles(certFile, certFile)
-	if err != nil {
-		log.Fatalf("Could not load TLS cert '%s': %s", certFile, err.Error())
+func getConnection(keepAliveTime time.Duration, keepAliveTimeout time.Duration, backoffMaxDelay time.Duration) (*grpc.ClientConn, error) {
+	authOption := grpc.WithInsecure()
+	if !debug {
+		// TODO: re-implement cert reloading after we merge our final design into go-certauth/certutils package
+		cert, err := certutils.LoadKeyCertFiles(certFile, certFile)
+		if err != nil {
+			log.Fatalf("Could not load TLS cert '%s': %s", certFile, err.Error())
+		}
+		// TODO: re-implement cert reloading after we merge our final design into go-certauth/certutils package
+		// cm, err := certutils.NewCertReloader(certFile, certFile)
+		// if err != nil {
+		// 	log.Fatalf("Could not load TLS cert '%s': %s", certFile, err.Error())
+		// }
+
+		caPool, err := certutils.LoadCACertFile(caFile)
+		if err != nil {
+			log.Fatalf("Could not load CA cert '%s': %s", caFile, err.Error())
+		}
+		tlsConfig := certutils.NewTLSConfig(certutils.TLSConfigModern)
+		tlsConfig.RootCAs = caPool
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		authOption = grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))
 	}
-	// TODO: re-implement cert reloading after we merge our final design into go-certauth/certutils package
-	// cm, err := certutils.NewCertReloader(certFile, certFile)
-	// if err != nil {
-	// 	log.Fatalf("Could not load TLS cert '%s': %s", certFile, err.Error())
-	// }
 
-	caPool, err := certutils.LoadCACertFile(caFile)
-	if err != nil {
-		log.Fatalf("Could not load CA cert '%s': %s", caFile, err.Error())
-	}
-	tlsConfig := certutils.NewTLSConfig(certutils.TLSConfigModern)
-	tlsConfig.RootCAs = caPool
-	tlsConfig.Certificates = []tls.Certificate{cert}
-
-	// TODO: re-implement cert reloading after we merge our final design into go-certauth/certutils package
-
-	// connect to riker
 	log.Println("Trying to connect to riker at ", addr)
-	conn, err := grpc.Dial(addr,
+	return grpc.Dial(addr,
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:    30 * time.Second,
-			Timeout: 5 * time.Second,
+			Time:    keepAliveTime,
+			Timeout: keepAliveTimeout,
 		}),
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithBackoffMaxDelay(10*time.Second),
+		authOption,
+		grpc.WithBackoffMaxDelay(backoffMaxDelay),
 		grpc.WithBlock(), // Blocking on connect is ok here
 	)
+}
+
+func wrapCmd(cmd *cobra.Command, args []string) error {
+	conn, err := getConnection(30*time.Second, 5*time.Second, 10*time.Second)
+
 	if err != nil {
 		log.Fatal(err)
 	}
