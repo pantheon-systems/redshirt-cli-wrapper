@@ -10,14 +10,19 @@
 #
 FETCH_URL := "https://github.com/gruntwork-io/fetch/releases/download/v0.1.0/fetch_linux_amd64"
 # Installs greater than 0.1.3 unless overridden.
-PANTS_VERSION := ">=0.1.5"
+PANTS_VERSION := "=0.1.9"
 FLAGS := --update-onebox=false
 ifdef PANTS_INCLUDE
   FLAGS += --include $(PANTS_INCLUDE)
 endif
 
 ## append to the global task
-deps-circle:: install-circle-pants delete-circle-pants
+deps-circle:: create-circle-paths install-circle-pants delete-circle-pants
+
+create-circle-paths:
+	@mkdir -p $(HOME)/bin
+	$(shell echo 'export PATH=$PATH:$HOME/bin' >> $BASH_ENV)
+	$(shell source $BASH_ENV)
 
 install-circle-fetch:
 ifeq (,$(wildcard $(HOME)/bin/fetch ))

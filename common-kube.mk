@@ -36,8 +36,12 @@ force-pod-restart:: ## nuke the pod
 
 # extend or define circle deps to install gcloud
 deps-circle-kube::
-	$(call INFO, "updating gcloud cli")
-	@./devops/make/sh/update-gcloud.sh > /dev/null
+	$(call INFO, "updating or install gcloud cli")
+	@if command -v gcloud >/dev/null; then \
+		./devops/make/sh/update-gcloud.sh > /dev/null ; \
+	else  \
+		./devops/make/sh/install-gcloud.sh > /dev/null ; \
+	fi
 
 update-secrets:: ## update secret volumes in a kubernetes cluster
 	$(call INFO, "updating secrets for $(KUBE_NAMESPACE)")

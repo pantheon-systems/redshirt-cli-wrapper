@@ -18,10 +18,12 @@ Common make tasks
     + [update-makefiles](#update-makefiles)
   * [common-docs.mk](#common-docsmk)
     + [circle.yml requirements](#circleyml-requirements)
+    + [circleci 2.0](#circleci-20)
     + [update-readme-toc](#update-readme-toc)
     + [test-readme-toc](#test-readme-toc)
   * [common-docker.mk](#common-dockermk)
     + [circle.yml requirements](#circleyml-requirements-1)
+    + [circleci 2.0](#circleci-20-1)
     + [Input Environment Variables:](#input-environment-variables)
     + [Exported Environment Variables:](#exported-environment-variables)
     + [build-docker::](#build-docker)
@@ -69,6 +71,7 @@ Common make tasks
     + [lint-flake8::](#lint-flake8)
   * [common-go.mk](#common-gomk)
     + [circle.yml requirements](#circleyml-requirements-3)
+    + [circleci 2.0](#circleci-20-2)
     + [Input Environment Variables:](#input-environment-variables-4)
     + [build-go::](#build-go)
     + [build-linux::](#build-linux)
@@ -85,6 +88,7 @@ Common make tasks
     + [test-coverage-html::](#test-coverage-html)
   * [common-kube.mk](#common-kubemk)
     + [circle.yml requirements](#circleyml-requirements-4)
+    + [circleci 2.0](#circleci-20-3)
     + [Input Environment Variables:](#input-environment-variables-5)
     + [Exported Environment Variables:](#exported-environment-variables-1)
     + [force-pod-restart::](#force-pod-restart)
@@ -118,7 +122,9 @@ Here are some good examples of common tasks that belong here:
 This repository is **NOT** a good place to define every handy task. Please be
 selective.
 
-It also contains an [examples](https://github.com/pantheon-systems/common_makefiles/tree/master/examples/go) folder with project repo skeletons, and the files contain very detailed comments that should provide a good starting point for everyone.
+It also contains an [examples](https://github.com/pantheon-systems/common_makefiles/tree/master/examples/go)
+folder with project repo skeletons, and the files contain very detailed comments
+that should provide a good starting point for everyone.
 
 Usage
 =====
@@ -150,7 +156,7 @@ Using in your Makefile
 you simply need to include the common makefiles you want in your projects root
 Makefile:
 
-```
+```make
 APP := baryon
 PROJECT := $$GOOGLE_PROJECT
 
@@ -190,7 +196,7 @@ e.g. `deps::`
 for example if I want to do something after the default build target from
 common-go.mk I can add to it in my Makefile like so:
 
-```
+```make
 build::
   @echo "this is after the common build"
 ```
@@ -211,7 +217,7 @@ Here is a method for pruning out unused files:
 files your project will need. Everything else will be removed locally and from
 git. Example project that only needs `common.mk` and `common-docker.mk`:
 
-```
+```make
 # extend the update-makefiles task to remove files we don't need
 update-makefiles::
         make prune-common-make
@@ -228,12 +234,14 @@ prune-common-make:
 ```
 
 - Follow the standard procedures for adding the common_makefiles to your project:
+
 ```
 git remote add common_makefiles git@github.com:pantheon-systems/common_makefiles.git --no-tags
 git subtree add --prefix devops/make common_makefiles master --squash
 ```
 
 - And then execute the prune task created in the first step:
+
 ```
 make prune-common-make
 ```
@@ -256,7 +264,7 @@ common.mk
 
 Any task that contains a comment following this pattern will be displayed:
 
-```
+```make
 foo: ## this help message will be display by `make help`
     echo foo
 ```
@@ -290,10 +298,20 @@ Common tasks for managing documentation.
 The following should be in your `circle.yml` if you intend to call these tasks
 from Circle-CI:
 
-```
+```yaml
 machine:
   services:
     - docker
+```
+
+### circleci 2.0
+
+If using a docker-based circleci 2.0 build environment ensure that a remote docker
+is available in your `.circleci/config.yml`:
+
+```yaml
+    steps:
+      - setup_remote_docker
 ```
 
 ### update-readme-toc
@@ -323,7 +341,7 @@ common-docker.mk
 The following should be in your `circle.yml` if you intend to call these tasks
 from Circle-CI:
 
-```
+```yaml
 machine:
   services:
     - docker
@@ -333,13 +351,15 @@ To push a container to quay.io upon a successful master build:
 - On Circle-CI, navigate to *Project Settings > Environment Variables*.
 - Add the following environment vars. Ask `@infra` on Slack if you need
   assistance accessing the Secure Notes in OneLogin.
+
 ```
 QUAY_USER: getpantheon+circleci
 QUAY_PASSWD: <copy paste from https://pantheon.onelogin.com/notes/29784 >
 ```
 
 And then call the `make push` task from a deployment section in `circle.yml`:
-```
+
+```yaml
 deployment:
   production:
     branch:
@@ -350,6 +370,19 @@ deployment:
       - make push
 ```
 
+### circleci 2.0
+
+If using a docker-based circleci 2.0 build environment ensure that a remote docker
+is available in your `.circleci/config.yml`:
+
+```yaml
+    steps:
+      - setup_remote_docker
+```
+
+Note that some functionality is not available with remote docker such as volume
+mounts. If you need to use volume mounts on circleci 2.0 you will need to use
+the VM-based build environment instead of docker.
 
 ### Input Environment Variables:
 
@@ -399,7 +432,7 @@ when writing shell scripts.
 The following should be in your `circle.yml` if you intend to call these tasks
 from Circle-CI:
 
-```
+```make
 machine:
   environment:
   PATH: $PATH:$HOME/.cabal/bin/
@@ -463,9 +496,10 @@ ygg-api. The kube environment is set with the `KUBE_NAMESPACE` following the
 convention `sandbox-REPO_NAME-BRANCH_NAME`.
 
 common-conda.mk
-------------
+---------------
 
 ### Notes:
+
 Conda is an open source package management system and environment management
 system for installing multiple versions of software packages and their
 dependencies and switching easily between them. It works on Linux, OS X and
@@ -474,10 +508,12 @@ software (i.e. Python, R, Ruby, Lua, Scala, Java, Javascript, C/ C++, FORTRAN).
 
 This common make integrates with common-python.mk. Both files can be included
 in the top-level Makefile. Example:
-```
+
+```make
 include devops/make/common-python.mk
 include devops/make/common-conda.mk
 ```
+
 To prevent mistakes, some targets are protected from being run inside a conda
 environment by using the `_assert-conda-env-active` and `_assert-conda-env-not-active`
 targets respectively.
@@ -489,6 +525,7 @@ targets respectively.
 - `COVERALLS_TOKEN`: (required by circle) Token to use when pushing coverage to coveralls.
 
 ### Input Environment Variables:
+
 - `TEST_RUNNER`: (required) The name of the test runner to execute. Inherited
    from common-python.mk
 - `CONDA_PACKAGE_NAME`: (required) The name of your conda package. Used to also
@@ -511,6 +548,7 @@ targets respectively.
    package on deployment. Defaults to `main`
 
 ### deps-conda::
+
 Downloads the miniconda installation script. The target uses `uname -s` to
 determine which installation script to download. Currently only `Darwin` (OSX)
 and `Linux` are supported. Runs the installation script and adds the path to
@@ -519,6 +557,7 @@ to disable automatic upload to anaconda cloud after a build. This target is
 added to the global `deps` target.
 
 ### setup-conda::
+
 Setup the conda virtual environment for this project. Looks for an environment.yml
 file in the project root.
 
@@ -526,6 +565,7 @@ Runs `conda env create || conda env update`
 This target is added to the global `setup` target.
 
 ### clean-conda::
+
 Removes index cache, lock files, tarballs, unused cache packages, and source cache.
 
 Runs `conda clean --all -y`.
@@ -533,16 +573,19 @@ Runs `conda clean --all -y`.
 This target is added to the global `clean` target.
 
 ### reset-conda-environment::
+
 Reset a conda environment by removing and reinstalling all of its packages.
 
 Runs `conda remove --name $(CONDA_PACKAGE_NAME) --all -y` and `conda env update`
 
 ### build-conda::
+
 Build conda package for project with current arch. A no arch package can be built by configuring the conda recipe.
 
 Runs `conda build recipe --no-anaconda-upload`.
 
 ### build-conda-deployment-environment::
+
 Clones the project conda environment into the project directory `./local`. This
 environment can be copied directly into the Docker container as the deployment
 artifact.
@@ -550,12 +593,14 @@ artifact.
 Runs `conda create --clone $(CONDA_PACKAGE_NAME) -y --prefix ./local --copy`.
 
 ### deploy-conda::
+
 Requires ANACONDA_CLOUD_DEPLOY_TOKEN to be set. Deploys the built conda package
 to Anaconda Cloud.
 
 Runs `conda build -q --user $(ANACONDA_CLOUD_ORGANIZATION) --token $(ANACONDA_CLOUD_DEPLOY_TOKEN) recipe`
 
 ### deploy-conda-pypi::
+
 Requires ANACONDA_CLOUD_DEPLOY_TOKEN to be set. Deploys the latest built pypi
 package to Anaconda Cloud. Distributing private pypi packages is a paid feature
 of Anaconda Cloud that we have not enabled, but private pypi packages can still
@@ -564,6 +609,7 @@ be downloaded on the dashboard or using the API.
 Runs `anaconda --token $(ANACONDA_CLOUD_DEPLOY_TOKEN) upload -u $(ANACONDA_CLOUD_ORGANIZATION) --label $(CONDA_PACKAGE_LABEL) --no-register --force dist/$(CONDA_PACKAGE_NAME)-$(CONDA_PACKAGE_VERSION).tar.gz`.
 
 ### regenerate-anaconda-cloud-repo-token::
+
 A helper to generate a personal read-only token for downloading private conda
 packages suitable for local development. If not logged into anaconda client this
 will present an interactive console. The token will be labeled `private_repo` on
@@ -575,19 +621,22 @@ Run `make admin-regenerate-anaconda-cloud-repo-token` Copy the token then run
 `export ANACONDA_CLOUD_REPO_TOKEN=_TOKEN_GOES_HERE_`
 
 ### add-conda-private-channel::
+
 Adds the pantheon private channel to your conda config for downloading conda
 packages from Anaconda Cloud. Requires ANACONDA_CLOUD_REPO_TOKEN to be set.
 
 ### generate-conda-requirements::
+
 Helper to generate a full dependency tree of this conda environment into a
 requirements_full.txt
 
 ### reset-conda-environment::
+
 Helper to reset a conda environment by removing and reinstalling all of its
 packages.
 
 common-python.mk
-------------
+----------------
 
 ### Input Environment Variables:
 
@@ -683,7 +732,7 @@ common-go.mk
 The following should be in your `circle.yml` if you intend to call these tasks
 from Circle-CI:
 
-```
+```yaml
 machine:
   services:
     - docker
@@ -707,6 +756,12 @@ test:
 ```
 
 The project must have a `COVERALLS_TOKEN` environment set as well.
+
+### circleci 2.0
+
+When using circleci 2.0 it is recommended to use one of the circleci provided
+Go primary containers if possible. The latest version of Go will be available.
+Updating to a new version involves bumping the container tag.
 
 ### Input Environment Variables:
 
@@ -789,7 +844,7 @@ common-kube.mk
 The following should be in your `circle.yml` if you intend to call these tasks
 from Circle-CI:
 
-```
+```yaml
 machine:
   environment:
     CLUSTER_ID: cluster-01
@@ -811,6 +866,24 @@ test:
 ```
     GCLOUD_EMAIL: 106225189366-i1mbqa3r1kvtt3vul3vk8sq3osspdqb8@developer.gserviceaccount.com
     GCLOUD_KEY: <copy paste the BASE64 encoded secret from https://pantheon.onelogin.com/notes/21237 here>
+```
+
+### circleci 2.0
+
+When using circleci 2.0 set the environment variables on the primary container, eg:
+
+```yaml
+---
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.9.1
+        environment:
+          CLOUDSDK_CORE_PROJECT: pantheon-internal
+          CLUSTER_ID: cluster-01
+          CLOUDSDK_COMPUTE_ZONE: us-central1-b
+    steps:
 ```
 
 ### Input Environment Variables:
@@ -1052,7 +1125,7 @@ There are 3 logging functions defined in `common.mk` INFO, WARN, and ERROR.
 If you want to have clean output for make tasks you should redirect STDOUT to
 /dev/null, and use these logging functions for reporting info to the user:
 
-```
+```yaml
 footask:
     $(call INFO, "running footask for $(FOO_VAR)")
     dostuff > /dev/null
