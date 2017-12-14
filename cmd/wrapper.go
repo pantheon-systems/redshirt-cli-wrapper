@@ -279,7 +279,7 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 			Path: args[0],
 			Args: fullArgs,
 			Env: []string{
-				"RIKER_GROUP=(" + strings.Join(msg.Groups, " ") + ")",
+				"RIKER_GROUP=" + strings.Join(msg.Groups, ","),
 				"RIKER_NICKNAME=" + msg.Nickname,
 			},
 		}
