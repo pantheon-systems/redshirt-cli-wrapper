@@ -275,13 +275,14 @@ func wrapCmd(cmd *cobra.Command, args []string) error {
 			ThreadTs:  msg.Timestamp,
 		}
 
+		envs := os.Environ()
+		envs = append(envs, fmt.Sprintf("RIKER_GROUP=%s", strings.Join(msg.Groups, ",")))
+		envs = append(envs, fmt.Sprintf("RIKER_NICKNAME=%s", msg.Nickname))
+
 		c := exec.Cmd{
 			Path: args[0],
 			Args: fullArgs,
-			Env: []string{
-				"RIKER_GROUP=" + strings.Join(msg.Groups, ","),
-				"RIKER_NICKNAME=" + msg.Nickname,
-			},
+			Env:  envs,
 		}
 
 		go runCmd(reply, c)
